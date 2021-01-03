@@ -7,19 +7,18 @@ import uk.co.innoxium.candor.util.Resources;
 import uk.co.innoxium.cybernize.json.JsonUtil;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * This class handles the games list logic, such as adding, removing.
  */
-public class GamesList {
+public final class GamesList {
 
     // Our games list.
-    private static final ArrayList<Game> GAMES_LIST = new ArrayList<>();
+    private static final List<Game> GAMES_LIST = new ArrayList<>();
     // The file to save the list to.
     private static final File GAMES_FILE = JsonUtil.getJsonFile(new File(Resources.CONFIG_PATH, "Games.json"), false);
 
@@ -29,7 +28,7 @@ public class GamesList {
      */
     public static void addGame(Game game) {
 
-        if(!GAMES_LIST.contains(game)) {
+        if (!GAMES_LIST.contains(game)) {
 
             GAMES_LIST.add(game);
         }
@@ -42,21 +41,16 @@ public class GamesList {
      */
     public static Game getGameFromUUID(UUID uuid) {
 
-        AtomicReference<Game> ret = new AtomicReference<>();
-        GAMES_LIST.forEach(game -> {
-
-            if(game.getUUID().equals(uuid)) {
-
-                ret.set(game);
-            }
-        });
-        return ret.get();
+        return GAMES_LIST.stream()
+            .filter(game -> game.getUUID().equals(uuid))
+            .findFirst()
+            .orElse(null);
     }
 
     /*
         Returns the games list object
      */
-    public static ArrayList<Game> getGamesList() {
+    public static List<Game> getGamesList() {
 
         return GAMES_LIST;
     }
@@ -68,29 +62,25 @@ public class GamesList {
     public static void loadFromFile() throws IOException {
 
         // Get the contents fo the JSON file
-        JsonObject contents = JsonUtil.getObjectFromPath(GAMES_FILE.toPath());
+        var contents = JsonUtil.getObjectFromPath(GAMES_FILE.toPath());
         // If the contents doesn't have a "games" array, add one, else convert to Game object, and add to list.
-        if(!contents.has("games")) {
+        if (!contents.has("games")) {
 
             // Add new JSONArray to the contents
             contents.add("games", new JsonArray());
             // Create a FileWriter and ask Gson to write to file.
-            FileWriter writer = JsonUtil.getFileWriter(GAMES_FILE);
-            JsonUtil.getGson().toJson(contents, writer);
-            // ALWAYS close your writers.
-            writer.close();
+            try (var writer = JsonUtil.getFileWriter(GAMES_FILE)) {
+                JsonUtil.getGson().toJson(contents, writer);
+            }
         } else {
 
             // Get the games array
-            JsonArray gamesArray = JsonUtil.getArray(contents, "games");
             // For each object in the array, convert to Game object, and add to games list.
-            gamesArray.forEach(e -> {
+            JsonUtil.getArray(contents, "games").forEach(e -> {
 
                 assert e instanceof JsonObject;
-                JsonObject obj = (JsonObject)e;
 
-                Game g = JsonUtil.getGson().fromJson(obj, Game.class);
-                GAMES_LIST.add(g);
+                GAMES_LIST.add(JsonUtil.getGson().fromJson((JsonObject)e, Game.class));
             });
         }
     }
@@ -103,19 +93,23 @@ public class GamesList {
 
         Logger.info("Writing Games List to file");
         // Get the contents of the current file.
-        JsonObject contents = JsonUtil.getObjectFromPath(GAMES_FILE.toPath());
+        var contents = JsonUtil.getObjectFromPath(GAMES_FILE.toPath());
         // Get the current "games" array of the file
-        JsonArray gamesArray = JsonUtil.getArray(contents, "games");
+        var gamesArray = JsonUtil.getArray(contents, "games");
         // For each game in the Games List, add to the array if not already there.
         GAMES_LIST.forEach(game -> {
 
-            JsonObject obj = game.toJson();
-            if(!gamesArray.contains(obj)) gamesArray.add(obj);
+            var obj = game.toJson();
+            if (!gamesArray.contains(obj))
+                gamesArray.add(obj);
         });
         // Create a file writer and ask Gson to write to file.
-        FileWriter writer = JsonUtil.getFileWriter(GAMES_FILE);
-        JsonUtil.getGson().toJson(contents, writer);
-        // ALWAYS close your writers.
-        writer.close();
+        try (var writer = JsonUtil.getFileWriter(GAMES_FILE)) {
+            JsonUtil.getGson().toJson(contents, writer);
+        }
+    }
+
+    private GamesList() {
+
     }
 }

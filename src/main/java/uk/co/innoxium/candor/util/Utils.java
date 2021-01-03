@@ -3,7 +3,7 @@ package uk.co.innoxium.candor.util;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.Vector;
 
@@ -58,7 +58,7 @@ public class Utils {
      * @param <T> - the object type
      * @return - A Vector list with a copy from the arraylist.
      */
-    public static <T> Vector<T> getVectorArrayFromList(ArrayList<T> list) {
+    public static <T> Vector<T> getVectorArrayFromList(List<T> list) {
 
         return new Vector<>(list);
     }

@@ -2,30 +2,28 @@ package uk.co.innoxium.candor.game;
 
 import com.github.f4b6a3.uuid.UuidCreator;
 import com.google.gson.JsonObject;
-import uk.co.innoxium.candor.module.AbstractModule;
 import uk.co.innoxium.candor.module.ModuleSelector;
 import uk.co.innoxium.candor.module.RunConfig;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
 /**
  * An object to represent a "game".
  */
-public class Game {
+public final class Game {
 
-    // The UUID of the game
-    private UUID uuid;
     // The path to the executable of the game
-    private String gameExe;
+    private final String gameExe;
     // The path to the game's mods folder
-    private String modsFolder;
+    private final String modsFolder;
     // The module that game should use, not currently used.
-    private String moduleClass;
+    private final String moduleClass;
     // A list of Run Configs
-    public ArrayList<RunConfig> runConfigs = new ArrayList<>();
+    public final List<RunConfig> runConfigs = new ArrayList<>();
 
     /**
      * Creates a game instance
@@ -36,7 +34,6 @@ public class Game {
     public Game(String gameExe, String modsFolder, String moduleClass) {
 
         // set the objects fields
-        this.uuid = UuidCreator.getNameBasedSha1(gameExe);
         this.gameExe = gameExe;
         this.modsFolder = modsFolder;
         this.moduleClass = moduleClass;
@@ -72,9 +69,9 @@ public class Game {
      */
     public JsonObject toJson() {
 
-        JsonObject ret = new JsonObject();
+        var ret = new JsonObject();
 
-        ret.addProperty("uuid", String.valueOf(uuid));
+        ret.addProperty("uuid", String.valueOf(getUUID()));
         ret.addProperty("gameExe", gameExe);
         ret.addProperty("modsFolder", modsFolder);
         ret.addProperty("moduleClass", moduleClass);
@@ -88,15 +85,15 @@ public class Game {
 
         if (this == o) return true;
         if (!(o instanceof Game)) return false;
-        Game game = (Game) o;
-        return uuid.equals(game.getUUID());
+        var game = (Game) o;
+        return getUUID().equals(game.getUUID());
     }
 
     // returns a hashcode to match the equals, here in case the games are even used in a hashmap
     @Override
     public int hashCode() {
 
-        return Objects.hash(uuid);
+        return Objects.hash(getUUID());
     }
 
     /**
@@ -107,11 +104,10 @@ public class Game {
 
         try {
 
-            AbstractModule module = ModuleSelector.getModuleForGame(this);
-            return module.getReadableGameName();
+            return ModuleSelector.getModuleForGame(this).getReadableGameName();
         } catch(NullPointerException e) {
 
-            File gameFile = new File(gameExe);
+            var gameFile = new File(gameExe);
             return gameFile.getName().substring(0, gameFile.getName().indexOf("."));
         }
     }
@@ -121,7 +117,7 @@ public class Game {
      */
     public UUID getUUID() {
 
-        return uuid;
+        return UuidCreator.getNameBasedSha1(gameExe);
     }
 
     // A toString instance used for debugging, will stay for the time being.
